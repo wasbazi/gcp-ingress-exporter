@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: ingress-exporter
+  namespace: kube-system
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8080"
+    prometheus.io/path: "/"
+spec:
+  template:
+    metadata:
+      labels:
+        app: ingress-exporter
+    spec:
+      containers:
+      - name: app
+        image: wasbazi/gcp-ingress-exporter
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        env:
+          - name: GOOGLE_PROJECT_ID
+            valueFrom:
+              secretKeyRef:
+                name: ingress-exporter
+                key: google_project_id
+          - name: GOOGLE_REGION_ID
+            valueFrom:
+              secretKeyRef:
+                name: ingress-exporter
+                key: google_region_id
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /google/google_auth.json
+        volumeMounts:
+          - name: ingress-exporter
+            mountPath: /google
+      volumes:
+      - name: ingress-exporter
+        secret:
+          secretName: ingress-exporter

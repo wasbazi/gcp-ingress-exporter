@@ -1,4 +1,8 @@
-FROM python:3.6
+FROM python:3.6-alpine
+
+# Install dependencies for numpy
+RUN apk --no-cache --update-cache add gcc musl-dev && \
+      ln -s /usr/include/locale.h /usr/include/xlocale.h
 
 WORKDIR /app
 
@@ -8,4 +12,4 @@ RUN pip install -r requirements.txt
 ADD . .
 
 ENTRYPOINT ["python"]
-CMD ["/app/exporter.py"]
+CMD ["exporter.py"]

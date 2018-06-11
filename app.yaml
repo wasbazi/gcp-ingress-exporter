@@ -37,6 +37,16 @@ spec:
               secretKeyRef:
                 name: ingress-exporter
                 key: google_region_id
+          - name: GOOGLE_ZONE_ID
+            valueFrom:
+              secretKeyRef:
+                name: ingress-exporter
+                key: google_zone_id
+          - name: CLUSTER
+            valueFrom:
+              secretKeyRef:
+                name: ingress-exporter
+                key: cluster
           - name: GOOGLE_APPLICATION_CREDENTIALS
             value: /google/google_auth.json
         volumeMounts:

@@ -1,4 +1,5 @@
 from json import loads
+import pathlib
 from time import sleep
 from os import environ
 
@@ -14,6 +15,7 @@ service = discovery.build('compute', 'v1', credentials=credentials)
 
 project = environ.get("GOOGLE_PROJECT_ID")
 region = environ.get("GOOGLE_PROJECT_REGION")
+zone = environ.get("GOOGLE_PROJECT_ZONE")
 
 labels = ('project', 'region', 'backend', 'health_route', 'health_port',
           'status', 'ingress_name')
@@ -61,7 +63,53 @@ def monitor_ingress():
                                state.lower())
 
 
+def generate_kube_config(endpoint, username, password):
+    config = """apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://{endpoint}
+  name: c
+contexts:
+- context:
+    cluster: c
+    user: c
+  name: c
+current-context: c
+kind: Config
+preferences: {{}}
+users:
+- name: c
+  user:
+    password: {password}
+    username: {username}"""
+
+    home = str(pathlib.Path.home())
+    pathlib.Path("{}/.kube".format(home)).mkdir(exist_ok=True)
+    with open("{}/.kube/config".format(home), "w") as f:
+        f.write(config.format(endpoint=endpoint, username=username,
+                              password=password))
+
+
+def load_kube_config(cluster):
+    container_service = discovery.build(
+            'container', 'v1', credentials=credentials)
+
+    request = container_service.projects().zones().clusters().get(
+            projectId=project, zone=zone, clusterId=cluster)
+
+    response = request.execute()
+
+    username = response['masterAuth']['username']
+    password = response['masterAuth']['password']
+    return response['endpoint'], username, password
+
+
 def main():
+    cluster = environ.get("GOOGLE_CLUSTER_ID")
+
+    endpoint, username, password = load_kube_config(cluster)
+    generate_kube_config(endpoint, username, password)
     config.load_kube_config()
 
     start_http_server(environ.get("PORT", 8080))

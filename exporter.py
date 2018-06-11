@@ -51,6 +51,9 @@ def monitor_ingress():
     k8s_extensions = client.ExtensionsV1beta1Api()
     all_ingress = k8s_extensions.list_namespaced_ingress('default')
     for ing in all_ingress.items:
+        if ING_ANNOTATION not in ing.metadata.annotations:
+            continue
+
         backends_json = ing.metadata.annotations[ING_ANNOTATION]
         ing_backends = loads(backends_json)
         for backend, state in ing_backends.items():

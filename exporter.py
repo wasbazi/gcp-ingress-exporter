@@ -29,9 +29,16 @@ url_prefix = url_prefix.format(project)
 
 def record_ingress(ingress_name, backend_name, check, state):
     http = check['httpHealthCheck']
+    healthy = 1 if state == "healthy" else 0
+    unhealthy = 1 if state == "unhealthy" else 0
+
     guage.labels(project=project, region=region, backend=backend_name,
                  health_route=http['requestPath'], health_port=http['port'],
-                 status=state, ingress_name=ingress_name).set(1)
+                 status="healthy", ingress_name=ingress_name).set(healthy)
+
+    guage.labels(project=project, region=region, backend=backend_name,
+                 health_route=http['requestPath'], health_port=http['port'],
+                 status="unhealthy", ingress_name=ingress_name).set(unhealthy)
 
 
 def load_health_checks(backend_name):
